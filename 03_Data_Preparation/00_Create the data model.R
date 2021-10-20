@@ -58,7 +58,8 @@ geolocation <- geolocation %>%
   left_join(city_zip, by = "geolocation_zip_code_prefix")
 
 
-# Need to run a test to identify if any of my primary key is duplicated
+# Need to run a test to identify if any of my primary key is duplicated (below script could be used?)
+#geo_2[duplicated(geo_2$geolocation_zip_code_prefix ), ]
 
 #3.Create a DM object----
 
@@ -68,17 +69,52 @@ ecommerce_dm_no_keys <- dm(customers,geolocation,order_items,
                             order_payments,order_reviews,orders,
                             products,sellers)
 
-#4.Define the primary key
+#4.Define the primary and Foreign Key (Data Model)
 
-## This handy function could help me identify the likely primary keys
-# dm_enum_pk_candidates(e_commerce_dm_no_keys,customers)
+        ## This handy function could help me identify the likely primary keys
+        # dm_enum_pk_candidates(e_commerce_dm_no_keys,customers)
 
-ecommerce_dm_pks <- 
+
+ecommerce_dm <- 
   ecommerce_dm_no_keys %>% 
-  dm_add_pk(table=customers,columns = customer_id) %>% 
-  dm_add_pk(table=orders,columns = order_id) %>% 
-  dm_add_pk(table=geolocation,columns = geolocation_zip_code_prefix) %>% 
-  dm_add_pk(table=sellers,columns = seller_id) %>% 
-  dm_add_pk(table=products,columns = product_id) 
+    #customer_id Key
+  dm_add_pk(table=customers,
+            columns = customer_id) %>%
+  dm_add_fk(table=orders,
+            columns = customer_id,
+            ref_table = customers) %>% 
+  #order_id Key
+  dm_add_pk(table=orders,
+            columns = order_id) %>% 
+  dm_add_fk(table=order_payments,
+            columns = order_id,
+            ref_table = orders) %>% 
+  dm_add_fk(table=order_reviews,
+            columns = order_id,
+            ref_table = orders) %>% 
+  dm_add_fk(table=order_items,
+            columns = order_id,
+            ref_table = orders) %>% 
+  #geolocation Key
+  dm_add_pk(table=geolocation,
+            columns = geolocation_zip_code_prefix) %>% 
+  dm_add_fk(table=sellers,
+            columns = seller_zip_code_prefix ,
+            ref_table = geolocation) %>% 
+  dm_add_fk(table=customers,
+            columns = customer_zip_code_prefix,
+            ref_table = geolocation) %>% 
+  #seller_id Key
+  dm_add_pk(table=sellers,
+            columns = seller_id) %>% 
+  dm_add_fk(table=order_items,
+            columns = seller_id,
+            ref_table = sellers) %>%
+  #product_id Key
+  dm_add_pk(table=products,
+            columns = product_id) %>% 
+  dm_add_fk(table=order_items,
+            columns = product_id,
+            ref_table = products) 
 
-  geo_2[duplicated(geo_2$geolocation_zip_code_prefix ), ]
+  
